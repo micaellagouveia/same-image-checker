@@ -1,4 +1,5 @@
 import threading
+import uuid
 
 from django.shortcuts import render
 
@@ -10,7 +11,8 @@ from rest_framework.decorators import api_view
 from images_checker import serializers
 from images_checker.images_checker import is_same_image
 from images_checker import models
-from images_checker.images_checker import calculate_image_hash
+from images_checker.images_checker import calculate_image_hash, delete_image
+from images_checker.aws import add_bucket_hash, get_bucket_hashes
 
 
 @api_view(['POST'])
@@ -58,24 +60,40 @@ def add_image_bucket(request, property_id):
     serializer = serializers.AddImageSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    #property = models.Property.objects.get(id=property_id)
     property = get_object_or_404(models.Property, id=property_id)
     data = serializer.validated_data
 
-    threads: List[threading.Thread] = []
+    # Pegar lista de hashes no bucket daquele imóvel
+    bucket_hashes = get_bucket_hashes(property.id)
+    # print(bucket_hashes)
+    # print("------------------------------")
 
+    # Pegar lista de novos links e gerar hashes
+    images_hashes = []
     for image_data in data['links']:
         link = image_data['link']
 
-        thread = threading.Thread(
-            target=models.Image.check_and_save_image,
-            kwargs={ "link": link, "property": property, },
-        )
-        thread.start()
-        threads.append(thread)
-    
-    thread: threading.Thread
-    for thread in threads:
-        thread.join()
+        file_name = uuid.uuid4().hex
+        image_hash = calculate_image_hash(link, '/tmp/' + file_name)
+        images_hashes.append(image_hash)
 
-    return Response({'result': True})
+        # se a imagem dos links não está na lista do bucket -> add ao bucket
+        if image_hash not in bucket_hashes:
+            add_bucket_hash(image_hash, property.id, file_name)
+
+        delete_image(file_name)
+    # print(images_hashes)
+    # print("------------------------------")
+
+    bucket_hashes = get_bucket_hashes(property.id)
+    # print(bucket_hashes)
+    # print("------------------------------")
+
+    for bucket_hash in bucket_hashes:
+        # se a imagem do bucket não está na lista de links
+        if bucket_hash not in images_hashes:
+            pass # deletar imagem do bucket
+    
+
+
+    return Response({"bucket": bucket_hashes, "links": images_hashes })
