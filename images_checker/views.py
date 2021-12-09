@@ -12,7 +12,7 @@ from images_checker import serializers
 from images_checker.images_checker import is_same_image
 from images_checker import models
 from images_checker.images_checker import calculate_image_hash, delete_image
-from images_checker.aws import add_bucket_hash, get_bucket_hashes
+from images_checker.aws import add_bucket_hash, get_bucket_hashes_by_property, get_all_bucket_hashes
 
 
 @api_view(['POST'])
@@ -56,7 +56,7 @@ def add_image(request, property_id):
 
 
 @api_view(['POST'])
-def add_image_bucket(request, property_id):
+def add_image_bucket_by_property(request, property_id):
     serializer = serializers.AddImageSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -64,7 +64,7 @@ def add_image_bucket(request, property_id):
     data = serializer.validated_data
 
     # Pegar lista de hashes no bucket daquele imóvel
-    bucket_hashes = get_bucket_hashes(property.id)
+    bucket_hashes = get_bucket_hashes_by_property(property.id)
     # print(bucket_hashes)
     # print("------------------------------")
 
@@ -73,7 +73,7 @@ def add_image_bucket(request, property_id):
     for image_data in data['links']:
         link = image_data['link']
 
-        file_name = uuid.uuid4().hex
+        file_name = uuid.uuid4().hex[:5]
         image_hash = calculate_image_hash(link, '/tmp/' + file_name)
         images_hashes.append(image_hash)
 
@@ -85,7 +85,7 @@ def add_image_bucket(request, property_id):
     # print(images_hashes)
     # print("------------------------------")
 
-    bucket_hashes = get_bucket_hashes(property.id)
+    bucket_hashes = get_bucket_hashes_by_property(property.id)
     # print(bucket_hashes)
     # print("------------------------------")
 
@@ -97,3 +97,14 @@ def add_image_bucket(request, property_id):
 
 
     return Response({"bucket": bucket_hashes, "links": images_hashes })
+
+@api_view(['POST'])
+def add_all_images_bucket(request, company_id):
+    #serializer = serializers.PropertiesSerializer(data=request)
+    #serializer.is_valid(raise_exception=True)
+    #company = get_object_or_404(models.Company, id=company_id)
+    #data = serializer.validated_data
+
+    # Get all hashes from company
+    hashes = get_all_bucket_hashes(company_id)
+    return Response({"bucket": hashes })

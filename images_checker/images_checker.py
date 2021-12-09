@@ -15,12 +15,15 @@ class CalculateImageHashException(Exception):
     pass
 
 
-def sha256sum(filename):
-    h  = hashlib.sha256()
-    with open(filename, 'rb') as f:
-        with mmap.mmap(f.fileno(), 0, prot=mmap.PROT_READ) as mm:
-            h.update(mm)
-    return h.hexdigest()
+def hash_md5(file_name):
+    with open(file_name, "rb") as f:
+        file_hash = hashlib.md5()
+        # This reads the file 8192 (or 2¹³) bytes at a time instead of all at once with f.read() to use less memory.
+        while chunk := f.read(8192):
+            file_hash.update(chunk)
+
+    print(file_hash.hexdigest())  # to get a printable str instead of bytes
+    return file_hash.hexdigest()
 
 def download_image_from_url(link: str, filename: str) -> Image:
 
@@ -75,7 +78,7 @@ def calculate_image_hash(url: str, file_name: str) -> str:
     except RequestException as exc:
         raise CalculateImageHashException("Falha na requisição da url")
     
-    return sha256sum(file_name)
+    return hash_md5(file_name)
 
 
 def delete_image(path: str):

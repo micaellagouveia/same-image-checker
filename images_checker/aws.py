@@ -13,6 +13,21 @@ def add_bucket_hash(hash: str, property_id: int, file_name: str):
     return
 
 
+# Pegando todas as hashes de uma company
+def get_all_bucket_hashes(company_id: int):
+    s3 = boto3.client('s3')
+    all_hashes = []
+
+    bucket = s3.list_objects(Bucket='teste-media-hash', Prefix=f'company_0{company_id}')
+    print(bucket)
+    if len(bucket['Contents']) > 0:
+        for hash in bucket['Contents']:
+            all_hashes.append({'key': hash['Key'], 'etag': hash['ETag']})
+    
+    # [elem for elem in l if 'property_01' in elem]
+
+    return all_hashes
+
 # Pegando as hashes de um imóvel específico
 def get_bucket_hashes_by_property(property_id: int):
     s3 = boto3.client('s3')
