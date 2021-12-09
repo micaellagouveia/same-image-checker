@@ -2,11 +2,23 @@ import uuid
 from django.db import models
 from images_checker.images_checker import calculate_image_hash, delete_image
 
+class Company (models.Model):
+    class Meta:
+        verbose_name_plural = 'companies'
+
+    name = models.CharField(max_length=100)
+    cnpj = models.CharField(max_length=100, unique=True)
+
 class Property (models.Model):
     class Meta:
         verbose_name_plural = 'properties'
 
     address = models.CharField(max_length=100)
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE, 
+        related_name='properties',
+    )
 
 class Image (models.Model):
     url = models.URLField()

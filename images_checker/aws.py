@@ -6,7 +6,7 @@ def add_bucket_hash(hash: str, property_id: int, file_name: str):
 
     try:
         data = open('/tmp/' + file_name, 'rb')
-        s3.Bucket('teste-media-hash').put_object(Key=f"{property_id}/{file_name}", Body=data, Metadata={'hash':hash})
+        s3.Bucket('teste-media-hash').put_object(Key=f"{property_id}/{file_name}.jpeg", Body=data, Metadata={'hash':hash})
     except:
         print("Erro ao adicionar arquivo no bucket")
     
@@ -14,7 +14,7 @@ def add_bucket_hash(hash: str, property_id: int, file_name: str):
 
 
 # Pegando as hashes de um imóvel específico
-def get_bucket_hashes(property_id: int):
+def get_bucket_hashes_by_property(property_id: int):
     s3 = boto3.client('s3')
     hashes = []
 
@@ -23,7 +23,7 @@ def get_bucket_hashes(property_id: int):
     
     for bucket in page_iterator:
         # print(bucket)
-        if bucket['KeyCount']> 0:
+        if bucket['KeyCount'] > 0:
             for image in bucket['Contents']:
                 # print(image['Key'])
                 try:

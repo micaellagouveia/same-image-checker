@@ -11,3 +11,10 @@ class ImageSerializer(serializers.Serializer):
 
 class AddImageSerializer(serializers.Serializer):
     links = ImageSerializer(many=True)
+
+class PropertySerializer(serializers.Serializer):
+    property_id = serializers.IntegerField()
+    medias = serializers.ListField()
+
+class PropertiesSerializer(serializers.Serializer):
+    properties = PropertySerializer(many=True)

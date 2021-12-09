@@ -3,6 +3,20 @@ from django.contrib.admin.options import ModelAdmin
 from images_checker import models
 
 
+@admin.register(models.Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'name',
+        'cnpj',
+    ]
+
+    search_fields = [
+        'name',
+        'cnpj',
+    ]
+
+
 @admin.register(models.Property)
 class PropertyAdmin(admin.ModelAdmin):
     list_display = [
