@@ -1,7 +1,6 @@
 import threading
 import uuid
-
-from django.shortcuts import render
+from typing import List
 
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
@@ -9,11 +8,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from images_checker import serializers
-from images_checker.images_checker import is_same_image
 from images_checker import models
+from images_checker import aws
+from images_checker.images_checker import is_same_image
 from images_checker.images_checker import calculate_image_hash, delete_image
-from images_checker.aws import add_bucket_hash, get_bucket_hashes_by_property, get_all_bucket_hashes
-
 
 @api_view(['POST'])
 def check_image(request):
@@ -64,9 +62,7 @@ def add_image_bucket_by_property(request, property_id):
     data = serializer.validated_data
 
     # Pegar lista de hashes no bucket daquele imóvel
-    bucket_hashes = get_bucket_hashes_by_property(property.id)
-    # print(bucket_hashes)
-    # print("------------------------------")
+    bucket_hashes = aws.get_bucket_hashes_by_property(property.id)
 
     # Pegar lista de novos links e gerar hashes
     images_hashes = []
@@ -79,15 +75,11 @@ def add_image_bucket_by_property(request, property_id):
 
         # se a imagem dos links não está na lista do bucket -> add ao bucket
         if image_hash not in bucket_hashes:
-            add_bucket_hash(image_hash, property.id, file_name)
+            aws.add_bucket_hash(image_hash, property.id, file_name)
 
         delete_image(file_name)
-    # print(images_hashes)
-    # print("------------------------------")
 
-    bucket_hashes = get_bucket_hashes_by_property(property.id)
-    # print(bucket_hashes)
-    # print("------------------------------")
+    bucket_hashes = aws.get_bucket_hashes_by_property(property.id)
 
     for bucket_hash in bucket_hashes:
         # se a imagem do bucket não está na lista de links
@@ -100,11 +92,35 @@ def add_image_bucket_by_property(request, property_id):
 
 @api_view(['POST'])
 def add_all_images_bucket(request, company_id):
-    #serializer = serializers.PropertiesSerializer(data=request)
-    #serializer.is_valid(raise_exception=True)
-    #company = get_object_or_404(models.Company, id=company_id)
-    #data = serializer.validated_data
+    serializer = serializers.PropertiesSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    company = get_object_or_404(models.Company, id=company_id)
+    data = serializer.validated_data
 
     # Get all hashes from company
-    hashes = get_all_bucket_hashes(company_id)
-    return Response({"bucket": hashes })
+    all_hashes = aws.get_all_bucket_hashes(company_id)
+
+    
+    for property in data['properties']:
+        # get hashes from property
+        property_bucket_hashes = aws.filter_hashes_by_property(all_hashes, property['property_id']) 
+
+        # Generate hash to new images coming
+        new_hashes = aws.generate_md5_hash(property['medias'])
+
+        # Generate sets of hashes
+        set_bucket_hashes = { elem['etag'] for elem in property_bucket_hashes }
+        set_new_hashes = { elem['etag'] for elem in new_hashes }
+
+        for new_hash in new_hashes:
+            # se a imagem dos links não está na lista do bucket -> add ao bucket
+            if new_hash['etag'] not in set_bucket_hashes:
+                aws.add_bucket_hash(new_hash['etag'], property['property_id'], company.id, new_hash['key'])
+                delete_image(new_hash['key'])
+        
+        for bucket_hash in property_bucket_hashes:
+            # se a imagem do bucket não está na lista de links -> deletar imagem do bucket
+            if bucket_hash['etag'] not in set_new_hashes:
+                aws.delete_bucket_image(company.id, property['property_id'], bucket_hash['key'])
+
+    return Response({"bucket": all_hashes })

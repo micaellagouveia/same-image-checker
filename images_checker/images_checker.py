@@ -23,7 +23,7 @@ def hash_md5(file_name):
             file_hash.update(chunk)
 
     print(file_hash.hexdigest())  # to get a printable str instead of bytes
-    return file_hash.hexdigest()
+    return f'"{file_hash.hexdigest()}"'
 
 def download_image_from_url(link: str, filename: str) -> Image:
 
