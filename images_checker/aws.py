@@ -52,14 +52,10 @@ def filter_hashes_by_property(all_hashes: List[dict], property_id: int):
     return filtered_hashes
 
 # Deletando imagem no bucket
-def delete_bucket_image(company_id: int, property_id: int, file_name: str):
-    # TODO: verificar se está funcionando a função de deletar
+def delete_bucket_image(key: str):
     s3 = boto3.client('s3')
     try:
-        s3.delete_object(
-            Bucket='teste-media-hash',
-            Key=f'company_{company_id}/property_{property_id}/{file_name}'
-            )
+        s3.delete_object(Bucket='teste-media-hash', Key=key)
     except RequestException as exc:
         raise Error('Falha ao deletar imagem no bucket')
 
