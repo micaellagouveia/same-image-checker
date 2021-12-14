@@ -13,10 +13,9 @@ def add_bucket_hash(hash: str, property_id: int, company_id: int, file_name: str
 
     try:
         data = open('/tmp/' + file_name, 'rb')
-        s3.Bucket('teste-media-hash').put_object(
-        Key=f"company_{company_id}/property_{property_id}/{file_name}.jpeg",
-        Body=data,
-        Metadata={'hash':hash})
+        bucket = s3.Bucket('teste-media-hash')
+        filename = f"company_{company_id}/property_{property_id}/{file_name}.jpeg"
+        bucket.put_object(Key=filename, Body=data, Metadata={ 'hash': hash })
     except RequestException as exc:
         raise Error("Falha na abertura do arquivo ou para salvar no bucket")
     return

@@ -116,7 +116,8 @@ def add_all_images_bucket(request, company_id):
             # se a imagem dos links não está na lista do bucket -> add ao bucket
             if new_hash['etag'] not in set_bucket_hashes:
                 aws.add_bucket_hash(new_hash['etag'], property['property_id'], company.id, new_hash['key'])
-                delete_image(new_hash['key'])
+            
+            delete_image(new_hash['key'])
         
         for bucket_hash in property_bucket_hashes:
             # se a imagem do bucket não está na lista de links -> deletar imagem do bucket

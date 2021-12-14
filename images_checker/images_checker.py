@@ -26,11 +26,6 @@ def hash_md5(file_name):
     return f'"{file_hash.hexdigest()}"'
 
 def download_image_from_url(link: str, filename: str) -> Image:
-
-    # filename = link.split('/')[-1]
-
-    # Nome único
-    # unique_filename = '/tmp/' + uuid.uuid4().hex[:7] + '-' + filename
     unique_filename = filename
 
     with requests.get(link, stream=True) as req:

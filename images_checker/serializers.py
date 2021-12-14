@@ -14,7 +14,10 @@ class AddImageSerializer(serializers.Serializer):
 
 class PropertySerializer(serializers.Serializer):
     property_id = serializers.IntegerField()
-    medias = serializers.ListField()
+    medias = serializers.ListField(
+        child=serializers.URLField(),
+        allow_empty=True,
+    )
 
 class PropertiesSerializer(serializers.Serializer):
     properties = PropertySerializer(many=True)
